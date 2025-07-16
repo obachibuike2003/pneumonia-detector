@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pneumonia Detector AI</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            animation: fadeIn 1s ease-out;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-size: 2.2em;
+        }
+        p {
+            font-size: 1.1em;
+            color: #555;
+            line-height: 1.6;
+        }
+        .upload-section {
+            margin-top: 20px;
+            border: 2px dashed #a0d9b4;
+            padding: 30px;
+            border-radius: 8px;
+            background-color: #e6f7ef;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .upload-label {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background-color 0.3s ease;
+            display: inline-block;
+            margin-top: 15px;
+        }
+        .upload-label:hover {
+            background-color: #2980b9;
+        }
+        #fileName {
+            margin-top: 10px;
+            font-style: italic;
+            color: #777;
+        }
+        #submitBtn {
+            background-color: #28a745;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1em;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        #submitBtn:hover {
+            background-color: #218838;
+        }
+        #submitBtn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+            animation: slideIn 0.5s ease-out;
+        }
+        #result.pneumonia {
+            background-color: #ffe0e0;
+            border-color: #ffb3b3;
+            color: #c0392b;
+        }
+        #result.normal {
+            background-color: #e0ffe0;
+            border-color: #b3ffb3;
+            color: #27ae60;
+        }
+        .loading {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none; /* Hidden by default */
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        footer {
+            margin-top: 40px;
+            font-size: 0.9em;
+            color: #888;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🩺 Pneumonia AI Detector</h1>
+        <p>Upload a chest X-ray image to get an AI-powered diagnosis.</p>
+
+        <div class="upload-section">
+            <input type="file" id="imageUpload" accept="image/png, image/jpeg, image/jpg">
+            <label for="imageUpload" class="upload-label">Choose X-ray Image</label>
+            <div id="fileName">No file chosen</div>
+        </div>
+
+        <button id="submitBtn" disabled>Analyze X-ray</button>
+
+        <div class="loading" id="loadingSpinner"></div>
+
+        <div id="result">
+            </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Pneumonia AI Detector. Built with Flask and TensorFlow.</p>
+    </footer>
+
+    <script>
+        const imageUpload = document.getElementById('imageUpload');
+        const fileNameSpan = document.getElementById('fileName');
+        const submitBtn = document.getElementById('submitBtn');
+        const resultDiv = document.getElementById('result');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+
+        // Event listener to enable/disable submit button based on file selection
+        imageUpload.addEventListener('change', function() {
+            if (this.files && this.files.length > 0) {
+                fileNameSpan.textContent = this.files[0].name;
+                submitBtn.disabled = false; // Enable the button
+                resultDiv.textContent = ''; // Clear previous result
+                resultDiv.className = ''; // Clear previous styling
+            } else {
+                fileNameSpan.textContent = 'No file chosen';
+                submitBtn.disabled = true; // Disable the button
+            }
+        });
+
+        // Event listener for the "Analyze X-ray" button click
+        submitBtn.addEventListener('click', function() {
+            const file = imageUpload.files[0];
+            if (!file) {
+                resultDiv.textContent = 'Please select an image first.';
+                resultDiv.className = '';
+                return;
+            }
+
+            loadingSpinner.style.display = 'block'; // Show spinner
+            submitBtn.disabled = true; // Disable button during processing
+            resultDiv.textContent = ''; // Clear previous result
+            resultDiv.className = ''; // Clear previous styling
+
+            // Create FormData object to send the file
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Use Fetch API for asynchronous HTTP request (Vanilla JS for AJAX)
+            fetch('/predict', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json()) // Parse JSON response
+            .then(data => {
+                loadingSpinner.style.display = 'none'; // Hide spinner
+                submitBtn.disabled = false; // Re-enable button
+
+                if (data.error) {
+                    resultDiv.textContent = `Error: ${data.error}`;
+                    resultDiv.className = 'error'; // Apply error styling if needed
+                } else {
+                    let className = data.diagnosis.toLowerCase();
+                    resultDiv.textContent = `Diagnosis: ${data.diagnosis} (${data.confidence})`;
+                    resultDiv.className = className; // Apply CSS class for styling (e.g., 'pneumonia' or 'normal')
+                }
+            })
+            .catch(error => {
+                loadingSpinner.style.display = 'none'; // Hide spinner
+                submitBtn.disabled = false; // Re-enable button
+                resultDiv.textContent = 'An error occurred during prediction. Please try again.';
+                resultDiv.className = 'error';
+                console.error('Fetch error:', error);
+            });
+        });
+    </script>
+</body>
+</html>
