@@ -1,9 +1,0 @@
-__pycache__/
-*.h5
-*.keras
-uploads/
-chest_xray/
-.env
-.DS_Store
-*.zip
-*.tar.gz
